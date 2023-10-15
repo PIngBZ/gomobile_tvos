@@ -32,7 +32,7 @@ func isApplePlatform(platform string) bool {
 	return contains(applePlatforms, platform)
 }
 
-var applePlatforms = []string{"ios", "iossimulator", "macos", "maccatalyst"}
+var applePlatforms = []string{"ios", "iossimulator", "tvos", "tvossimulator", "macos", "maccatalyst"}
 
 func platformArchs(platform string) []string {
 	switch platform {
@@ -40,6 +40,10 @@ func platformArchs(platform string) []string {
 		return []string{"arm64"}
 	case "iossimulator":
 		return []string{"arm64", "amd64"}
+	case "tvos":
+		return []string{"arm64"}
+	case "tvossimulator":
+		return []string{"amd64"}
 	case "macos", "maccatalyst":
 		return []string{"arm64", "amd64"}
 	case "android":
@@ -58,7 +62,7 @@ func platformOS(platform string) string {
 	switch platform {
 	case "android":
 		return "android"
-	case "ios", "iossimulator":
+	case "ios", "iossimulator", "tvos", "tvossimulator":
 		return "ios"
 	case "macos", "maccatalyst":
 		// For "maccatalyst", Go packages should be built with GOOS=darwin,
@@ -77,6 +81,8 @@ func platformTags(platform string) []string {
 		return []string{"android"}
 	case "ios", "iossimulator":
 		return []string{"ios"}
+	case "tvos", "tvossimulator":
+		return []string{"tvos"}
 	case "macos":
 		return []string{"macos"}
 	case "maccatalyst":
@@ -92,7 +98,7 @@ func platformTags(platform string) []string {
 		// https://stackoverflow.com/questions/12132933/preprocessor-macro-for-os-x-targets/49560690#49560690
 		// TODO(ydnar): remove tag "ios" when cgo supports Catalyst
 		// See golang.org/issues/47228
-		return []string{"ios", "macos", "maccatalyst"}
+		return []string{"ios", "tvos", "macos", "maccatalyst"}
 	default:
 		panic(fmt.Sprintf("unexpected platform: %s", platform))
 	}
@@ -215,6 +221,18 @@ func envInit() (err error) {
 				sdk = "iphonesimulator"
 				clang, cflags, err = envClang(sdk)
 				cflags += " -mios-simulator-version-min=" + buildIOSVersion
+				cflags += " -fembed-bitcode"
+			case "tvos":
+				goos = "ios"
+				sdk = "appletvos"
+				clang, cflags, err = envClang(sdk)
+				cflags += " -mtvos-version-min=" + buildTVOSVersion
+				cflags += " -fembed-bitcode"
+			case "tvossimulator":
+				goos = "ios"
+				sdk = "appletvsimulator"
+				clang, cflags, err = envClang(sdk)
+				cflags += " -mtvos-version-min=" + buildTVOSVersion
 				cflags += " -fembed-bitcode"
 			case "maccatalyst":
 				// Mac Catalyst is a subset of iOS APIs made available on macOS

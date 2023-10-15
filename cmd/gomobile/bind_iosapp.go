@@ -52,8 +52,9 @@ func goAppleBind(gobind string, pkgs []*packages.Package, targets []targetInfo) 
 		gobindWG.Go(func() error {
 			// Catalyst support requires iOS 13+
 			v, _ := strconv.ParseFloat(buildIOSVersion, 64)
-			if platform == "maccatalyst" && v < 13.0 {
-				return errors.New("catalyst requires -iosversion=13 or higher")
+			v1, _ := strconv.ParseFloat(buildTVOSVersion, 64)
+			if platform == "maccatalyst" && (v < 13.0 || v1 < 14.0) {
+				return errors.New("catalyst requires -iosversion=13 or higher & -tvosversion=14 or higher")
 			}
 
 			// Run gobind once per platform to generate the bindings

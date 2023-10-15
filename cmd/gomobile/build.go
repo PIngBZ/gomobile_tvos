@@ -148,10 +148,11 @@ func runBuildImpl(cmd *command) (*packages.Package, error) {
 		}
 		if pkg.Name != "main" {
 			for _, t := range targets {
-				// Catalyst support requires iOS 13+
+				// Catalyst support requires iOS 13+ tvOS 14+
 				v, _ := strconv.ParseFloat(buildIOSVersion, 64)
-				if t.platform == "maccatalyst" && v < 13.0 {
-					return nil, errors.New("catalyst requires -iosversion=13 or higher")
+				v1, _ := strconv.ParseFloat(buildTVOSVersion, 64)
+				if t.platform == "maccatalyst" && (v < 13.0 || v1 < 14.0) {
+					return nil, errors.New("catalyst requires -iosversion=13 or higher & -tvosversion=14 or higher")
 				}
 				if err := goBuild(pkg.PkgPath, appleEnv[t.String()]); err != nil {
 					return nil, err
@@ -246,6 +247,7 @@ var (
 	buildWork       bool        // -work
 	buildBundleID   string      // -bundleid
 	buildIOSVersion string      // -iosversion
+	buildTVOSVersion string     // -tvosversion
 	buildAndroidAPI int         // -androidapi
 	buildTags       stringsFlag // -tags
 )
@@ -257,6 +259,7 @@ func addBuildFlags(cmd *command) {
 	cmd.flag.StringVar(&buildTarget, "target", "android", "")
 	cmd.flag.StringVar(&buildBundleID, "bundleid", "", "")
 	cmd.flag.StringVar(&buildIOSVersion, "iosversion", "13.0", "")
+	cmd.flag.StringVar(&buildTVOSVersion, "tvosversion", "14.0", "")
 	cmd.flag.IntVar(&buildAndroidAPI, "androidapi", minAndroidAPI, "")
 
 	cmd.flag.BoolVar(&buildA, "a", false, "")
@@ -425,6 +428,9 @@ func parseBuildTarget(buildTarget string) ([]targetInfo, error) {
 	// Special case to build iossimulator if -target=ios
 	if buildTarget == "ios" {
 		addPlatform("iossimulator")
+	}
+	if buildTarget == "tvos" {
+		addPlatform("tvossimulator")
 	}
 
 	return targets, nil
